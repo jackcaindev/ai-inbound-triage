@@ -1,0 +1,44 @@
+# Category definitions used to build the classification prompt.
+# This is config, not code — adding, removing, or redefining a category here is
+# the whole re-skinning story: no code change needed to point the demo at a new business.
+categories:
+  - name: new_inquiry
+    description: >
+      A first-time or prospective customer asking about products, services, pricing,
+      availability, or how to get started. No existing account or open issue implied.
+    examples:
+      - "Hi, I saw your website and wanted to ask if you handle commercial jobs too."
+      - "Do you offer a free consultation before signing up?"
+
+  - name: support_issue
+    description: >
+      An existing customer reporting something broken, not working as expected, or
+      asking for help with a product or service they already have.
+    examples:
+      - "The unit you installed last week is making a rattling noise."
+      - "I can't log into my account, it says my password is wrong even after resetting it."
+
+  - name: billing_question
+    description: >
+      A question, dispute, or concern about an invoice, charge, payment, refund, or
+      subscription cost. Includes complaints that are primarily about money even if
+      they mention other issues.
+    examples:
+      - "I was charged twice for my March invoice, can you refund the duplicate?"
+      - "Why did my subscription price go up this month without notice?"
+
+  - name: scheduling_request
+    description: >
+      A request to book, reschedule, confirm, or cancel an appointment, delivery,
+      installation, or visit. Centers on a date/time, not a billing or support problem.
+    examples:
+      - "Can we move Thursday's appointment to next Monday instead?"
+      - "I'd like to schedule an installation sometime in the next two weeks."
+
+  - name: spam
+    description: >
+      Unsolicited marketing, phishing attempts, irrelevant mass-sent content, or
+      messages with no genuine business request for this company.
+    examples:
+      - "Congratulations! You've been selected to claim your free prize, click here now."
+      - "Boost your website traffic instantly — SEO packages starting at $9.99!"
