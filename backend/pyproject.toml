@@ -8,6 +8,11 @@ dependencies = [
     "pydantic>=2.9",
     "pydantic-settings>=2.5",
     "sqlalchemy>=2.0.35",
+    # SQLAlchemy's own greenlet marker omits arm64 (Apple Silicon's platform_machine
+    # string; it only lists aarch64, which is the Linux name for the same
+    # architecture) so it silently doesn't get installed there via the transitive
+    # dependency alone, even though the async engine requires it at runtime.
+    "greenlet>=3.0",
     "alembic>=1.13.3",
     "asyncpg>=0.29",
     "psycopg[binary]>=3.2",
