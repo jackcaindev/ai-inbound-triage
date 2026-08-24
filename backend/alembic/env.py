@@ -1,13 +1,23 @@
+import sys
 from logging.config import fileConfig
+from pathlib import Path
 
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
-from app.config import settings
-from app.db import Base
+
+# Make `app` importable regardless of the current working directory the migration
+# runner was invoked from (e.g. `uv run --project backend alembic ...` from the repo
+# root does not chdir into backend/, unlike `cd backend && uv run alembic ...`).
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
+from app.config import settings  # noqa: E402
+from app.db import Base  # noqa: E402
 
 # Import every model module so they register on Base.metadata before autogenerate runs.
-from app.models import (  # noqa: F401
+from app.models import (  # noqa: E402, F401
     AuditLog,
     Classification,
     EvalExample,
@@ -22,9 +32,10 @@ from app.models import (  # noqa: F401
 # access to the values within the .ini file in use.
 config = context.config
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
-if config.config_file_name is not None:
+# Interpret the config file for Python logging, if it declares logging sections —
+# a minimal delegating ini (e.g. a repo-root one that just points script_location
+# here) may not, and that's fine, it just skips log configuration.
+if config.config_file_name is not None and config.file_config.has_section("loggers"):
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
