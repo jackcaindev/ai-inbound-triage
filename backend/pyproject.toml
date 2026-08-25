@@ -22,6 +22,9 @@ dependencies = [
     "uvicorn>=0.32",
 ]
 
+[project.scripts]
+inbound-triage = "app.cli:main"
+
 [dependency-groups]
 dev = [
     "pytest>=8.3",

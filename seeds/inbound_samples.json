@@ -1,0 +1,589 @@
+{
+  "_extraction_fields": [
+    "contact_name",
+    "company",
+    "requested_action",
+    "urgency",
+    "dates_mentioned",
+    "dollar_amounts_mentioned"
+  ],
+  "_distribution_target": {
+    "new_inquiry": 18,
+    "support_issue": 20,
+    "billing_question": 16,
+    "scheduling_request": 12,
+    "spam": 6
+  },
+  "records": [
+    {
+      "external_ref": "msg-001",
+      "received_at": "2026-03-03T09:14:00",
+      "raw_content": "Hi there,\n\nMy name is Marcus Webb and I run operations for Two Rivers Dental. We're looking for a new vendor to handle our equipment servicing starting in Q2 — our current contract runs out at the end of April. Could someone send over your service tiers and rough pricing? Happy to hop on a call this week or next if that's easier.\n\nThanks,\nMarcus",
+      "_likely_category": "new_inquiry",
+      "_note": "Clean baseline new_inquiry — full contact info, clear ask, no ambiguity. Control case for the extractor before the noisier ones."
+    },
+    {
+      "external_ref": "msg-002",
+      "received_at": "2026-03-02T14:02:00",
+      "raw_content": "This is Odalys. The unit installed two weeks ago is cycling on and off every few minutes and it wasn't doing that before. Can someone come look at it, ideally tomorrow.",
+      "_likely_category": "support_issue",
+      "_note": "Clear support_issue, name given inline rather than a signature block, no company. Tests that contact_name can appear in the body itself."
+    },
+    {
+      "external_ref": "msg-003",
+      "received_at": "2026-03-05T11:40:00",
+      "raw_content": "Hello,\n\nI'm reviewing our March statement and there's a $340.00 charge labeled 'service fee adj.' that I don't recognize — we weren't told about any adjustment. Can someone break down what this is for before it goes through? I'd rather not dispute it with the bank if it's something legitimate.\n\nBest,\nFatima Al-Rashid\nSable Ridge Vineyards",
+      "_likely_category": "billing_question",
+      "_note": "Clear billing_question with a specific dollar figure and full signature block — control case for amount extraction."
+    },
+    {
+      "external_ref": "msg-004",
+      "received_at": "2026-03-04T08:55:00",
+      "raw_content": "Can we push our March 12th appointment to the following week? Something came up on our end. Whatever day works for you after the 16th is fine.",
+      "_likely_category": "scheduling_request",
+      "_note": "Clear scheduling_request with a real date but no name or company anywhere — tests extraction without an identifiable sender."
+    },
+    {
+      "external_ref": "msg-005",
+      "received_at": "2026-03-01T03:22:00",
+      "raw_content": "Your business has been pre-approved for a $50,000 growth loan with NO credit check required!! Reply YES within 24 hours to lock in this rate before it expires. Limited spots available this month.",
+      "_likely_category": "spam",
+      "_note": "Obvious phishing/spam with a dollar figure that could tempt a naive rule into misrouting it as high-value — tests that classification, not just the amount, gates the finance-review rule."
+    },
+    {
+      "external_ref": "msg-006",
+      "received_at": "2026-03-06T16:48:00",
+      "raw_content": "I've called twice now about the outage credit from February and both times I was told it would be applied \"within a billing cycle.\" It's been two cycles. I'm not trying to be difficult but at this point I'm looking at what else is out there, because if I can't get a straight answer about a $60 credit I don't have much confidence in anything bigger going wrong. Can someone actually check the account and tell me what happened, not just apologize again?\n\n— Trent Yoshida, account #48211",
+      "_likely_category": [
+        "billing_question",
+        "support_issue"
+      ],
+      "_note": "Ambiguous billing_question/support_issue — the surface complaint is a missing credit, but the real signal is churn risk from repeated unresolved contact. A confident classifier that only sees 'billing' misses the retention urgency."
+    },
+    {
+      "external_ref": "msg-007",
+      "received_at": "2026-03-07T19:10:00",
+      "raw_content": "still not working right. same as before.",
+      "_likely_category": "support_issue",
+      "_note": "Deliberately near-content-free — no name, no signature, no specifics, nothing to reference. Tests that extraction returns None across the board rather than inventing what 'it' refers to."
+    },
+    {
+      "external_ref": "msg-008",
+      "received_at": "2026-03-08T10:05:00",
+      "raw_content": "fwd — see below, can you two connect on this?\n\n> On Mar 6, 2026, at 4:12 PM, Bex Okafor-Lindqvist wrote:\n> > On Mar 5, 2026, Winnifred O. wrote:\n> > > Hey, a friend recommended these guys for the fence project. Can you reach out and get a ballpark? We're hoping to start sometime this spring, no rush on exact dates yet.\n> > forwarding to you since you handle vendor intros\nforwarding again, thanks",
+      "_likely_category": "new_inquiry",
+      "_note": "Forwarded three-deep reply chain — the actual new_inquiry (a fence quote request from Winnifred) is buried at the bottom under two layers of '>' quoting. Tests whether extraction reaches into quoted text instead of just the top line."
+    },
+    {
+      "external_ref": "msg-009",
+      "received_at": "2026-03-09T13:30:00",
+      "raw_content": "Hello,\n\nI'm reaching out on behalf of Prairie Fox Analytics — we're a small data consultancy (about 14 people) currently spread across three different tools for client reporting, and honestly none of them talk to each other well. I did some research and your platform came up a few times in threads I trust, so I wanted to get a real sense of whether it would fit before we commit engineering time to a migration.\n\nSpecifically, we'd need to know: does your system support role-based dashboards where a client only sees their own data, and can that be white-labeled under our domain rather than yours? We had a bad experience with a previous vendor where \"custom branding\" turned out to mean a logo swap and nothing else, so I want to be direct about that requirement up front.\n\nBudget-wise we're not shopping on price alone, but I'd still like a sense of where you land relative to enterprise-tier competitors before we schedule a longer call — no point falling in love with a demo if the number is off by 5x. If it helps, our current spend across the three overlapping tools is somewhere in the neighborhood of $2,800 a month combined, which is part of why we're consolidating.\n\nIf someone technical is available, I'd rather talk to them first than a sales rep, at least for this initial pass. Let me know what the process looks like on your end and I'll get something on the calendar.\n\nAna Beatriz Coutinho\nHead of Client Ops, Prairie Fox Analytics",
+      "_likely_category": "new_inquiry",
+      "_note": "Deliberately long and dense — four paragraphs with a real requirement buried in paragraph two and a dollar figure buried in paragraph four. Tests extraction under length rather than brevity."
+    },
+    {
+      "external_ref": "msg-010",
+      "received_at": "2026-03-10T07:48:00",
+      "raw_content": "can someone come earlier than the 14th, the leak in the ceiling is getting worse and i dont think it can wait that long",
+      "_likely_category": [
+        "scheduling_request",
+        "support_issue"
+      ],
+      "_note": "Ambiguous scheduling_request/support_issue — reads as a reschedule ask but the actual driver is an active leak, which is really an urgent support issue wearing a scheduling request's clothes. Lowercase, no greeting or signature, missing apostrophes."
+    },
+    {
+      "external_ref": "msg-011",
+      "received_at": "2026-03-11T15:00:00",
+      "raw_content": "Hi,\n\nFinance flagged invoice #7734 before releasing payment — the total is $18,450.00 which is about $3,000 higher than the estimate we approved in January. Can someone walk through the difference line by line? We're not refusing to pay, we just need it to reconcile before it goes to our board for sign-off next week.\n\nThank you,\nLucius Bramwell\nWhitmore Legal Group",
+      "_likely_category": "billing_question",
+      "_note": "High-dollar billing_question ($18,450, above the demo's $10,000 review threshold) with full contact info — should trip the finance-review rule regardless of how confident the classifier is."
+    },
+    {
+      "external_ref": "msg-012",
+      "received_at": "2026-03-12T21:17:00",
+      "raw_content": "Subject: STILL BROKEN AFTER TWO VISITS\n\nthird time writing about this. tech came out monday said it was fixed, wasnt. came out again thursday, same noise startin up again by friday morning. im not trying to be a pain but i took time off work twice for this and cant keep doing that. someone needs to actually figure out whats wrong instead of just resetting it and leaving",
+      "_likely_category": "support_issue",
+      "_note": "All-caps subject line pasted in, heavy typos and missing apostrophes, sentence fragments, no signature or name anywhere. Tests robustness to noisy real-world text rather than clean prose."
+    },
+    {
+      "external_ref": "msg-013",
+      "received_at": "2026-03-01T08:20:00",
+      "raw_content": "Hi, my name's Kip Dawes — a coworker mentioned you handle irrigation installs for small commercial lots. Do you take on jobs outside city limits? We're about 20 minutes out. If so I'd love a rough sense of cost before I bring it to my partner.",
+      "_likely_category": "new_inquiry",
+      "_note": "Straightforward new_inquiry, name given inline with no formal sign-off, no company."
+    },
+    {
+      "external_ref": "msg-014",
+      "received_at": "2026-03-13T11:05:00",
+      "raw_content": "hey! this is Suzette over at Union Street Bakery — we're expanding into a second location this summer and need someone to handle the new kitchen's ventilation setup from scratch. can you do consults for spaces that arent built out yet, or do you need walls up first? trying to figure out timing before we sign the lease\n\nthanks!\nSuzette",
+      "_likely_category": "new_inquiry",
+      "_note": "Informal register with a real signature line, missing apostrophe ('arent'), tests casual-voice new_inquiry with a concrete pre-lease timing constraint."
+    },
+    {
+      "external_ref": "msg-015",
+      "received_at": "2026-03-02T16:40:00",
+      "raw_content": "Do you offer any kind of trial period before committing to an annual contract? Comparing a few options right now and that's the deciding factor for us.",
+      "_likely_category": "new_inquiry",
+      "_note": "No name, no signature, single sentence — tests extraction when only a bare requested_action is present and everything else is absent."
+    },
+    {
+      "external_ref": "msg-016",
+      "received_at": "2026-03-14T09:55:00",
+      "raw_content": "Good morning,\n\nMy name is Achilles Tomas and I recently took over managing my late father's rental properties — four units total, nothing huge, but I have zero background in property management software and I'm drowning a little in spreadsheets. A neighbor uses your service and said it might help. Before I go further I want to make sure it's actually built for someone at my scale and not just larger portfolios, since I've been burned by \"enterprise\" tools that don't bother explaining themselves to someone new.\n\nCould someone walk me through what onboarding actually looks like for four units? I'm not in a rush, I'd just rather understand it properly than sign up and flounder.\n\nThanks for your patience with a long email.\nAchilles",
+      "_likely_category": "new_inquiry",
+      "_note": "Long, personal, unusual name, no company — tests extraction on a message where the emotional context (grief, being overwhelmed) is heavier than the literal ask."
+    },
+    {
+      "external_ref": "msg-017",
+      "received_at": "2026-03-07T06:12:00",
+      "raw_content": "looking for a quote on solar panel install for a detached garage, roughly 400 sq ft roof, south facing",
+      "_likely_category": "new_inquiry",
+      "_note": "Terse, no greeting, no name, no signature, all lowercase — technical detail (sq ft, orientation) present without any identifying info."
+    },
+    {
+      "external_ref": "msg-018",
+      "received_at": "2026-03-04T19:30:00",
+      "raw_content": "passing this along, seems like something we should respond to\n\n> From: Rosalind Ferro, Half Moon Bay Kayak Tours\n> We're looking to add a merchandise ordering system to our existing booking site rather than run two separate platforms. Does your integration work with Squarespace, or would we need to migrate the whole site over?",
+      "_likely_category": "new_inquiry",
+      "_note": "Forwarded chain — the actual requester (Rosalind, with company) is only named inside the '>' quoted block; the person sending it now is anonymous."
+    },
+    {
+      "external_ref": "msg-019",
+      "received_at": "2026-03-10T13:15:00",
+      "raw_content": "Otto here — a client of mine recommended your bookkeeping service. I run a small landscaping crew, 6 guys, mostly cash and check right now which is a mess come tax time. Is this something you handle for businesses that small or do you mostly work with bigger operations?",
+      "_likely_category": "new_inquiry",
+      "_note": "Name inline, no company name (just describes the business), no formal signature — tests contact_name extraction from a mid-sentence introduction."
+    },
+    {
+      "external_ref": "msg-020",
+      "received_at": "2026-03-06T10:48:00",
+      "raw_content": "We're a nonprofit looking for donated or discounted web hosting — happy to provide our 501(c)(3) documentation if that helps the conversation. Who would be the right person to talk to about that?",
+      "_likely_category": "new_inquiry",
+      "_note": "No name, no company name, no signature — an org type is mentioned but nothing identifying the sender."
+    },
+    {
+      "external_ref": "msg-021",
+      "received_at": "2026-03-09T08:00:00",
+      "raw_content": "To whom it may concern,\n\nI am writing on behalf of Clearwater Pediatrics to inquire about your after-hours answering service. We currently rotate on-call duty manually among five physicians using personal cell phones, which has become unsustainable as the practice has grown. We are specifically interested in HIPAA-compliant call routing with the ability to escalate based on physician-defined triage rules.\n\nCould you please advise whether such a configuration is available, and if so, direct me to someone who can discuss implementation timelines? We would ideally like something operational before the start of flu season.\n\nRegards,\nDr. Petra Vondráček\nClearwater Pediatrics",
+      "_likely_category": "new_inquiry",
+      "_note": "Formal register, full signature block, precise technical requirement — a control case at the opposite tonal end from the lowercase fragments elsewhere in the set."
+    },
+    {
+      "external_ref": "msg-022",
+      "received_at": "2026-03-12T22:40:00",
+      "raw_content": "quick one before i forget — this is Django from Redline Motorsports, do you guys do fleet discounts for 8+ vehicles or is pricing flat per unit regardless of volume",
+      "_likely_category": "new_inquiry",
+      "_note": "Casual, no punctuation discipline, name and company given mid-sentence with no formal signature."
+    },
+    {
+      "external_ref": "msg-023",
+      "received_at": "2026-03-05T15:20:00",
+      "raw_content": "The reporting dashboard you set us up with a year ago technically still works but it hasn't kept up with how much we've grown — we're now managing triple the client accounts and it's basically unusable at this volume, pages take forever to load. Before I just call this a support ticket, is there a higher tier that's actually built for our size, or is this the ceiling of what the platform does? Don't want to waste your team's time troubleshooting something that's really a scaling problem.\n\nNkechi Obi",
+      "_likely_category": [
+        "new_inquiry",
+        "support_issue"
+      ],
+      "_note": "Ambiguous new_inquiry/support_issue — framed as a performance complaint but the actual ask is about upgrading tiers, which is really a sales conversation. Tests whether the model over-indexes on complaint language ('unusable') and misses the upsell intent."
+    },
+    {
+      "external_ref": "msg-024",
+      "received_at": "2026-03-11T09:40:00",
+      "raw_content": "can you add a second location to our account or does that need to be a whole new signup? kind of confusing that its not just an option in the existing dashboard, feels like it should be there already",
+      "_likely_category": [
+        "new_inquiry",
+        "support_issue"
+      ],
+      "_note": "Ambiguous new_inquiry/support_issue — reads like a product gripe ('feels like it should be there already') but the actual request is adding a paid second location, which is a sales action. No name or signature."
+    },
+    {
+      "external_ref": "msg-025",
+      "received_at": "2026-03-08T14:10:00",
+      "raw_content": "Wondering what your availability looks like for new clients this spring — we'd want to get something on the calendar for late April but I don't want to ask for specific dates until I know you're even taking on new work right now.",
+      "_likely_category": [
+        "new_inquiry",
+        "scheduling_request"
+      ],
+      "_note": "Ambiguous new_inquiry/scheduling_request — genuinely both: it's a prospective client, but the entire content of the message is about calendar availability. A model forced to pick one will reasonably disagree with itself on a second pass."
+    },
+    {
+      "external_ref": "msg-026",
+      "received_at": "2026-03-13T17:55:00",
+      "raw_content": "Hi,\n\nI'm getting married in September and a friend used your catering service for her wedding last year — loved it. I know that's a long way off but I've heard good caterers book up fast, so I wanted to reach out early. Do you need an exact date locked in before we can even start talking menu options, or can we have a general conversation first?\n\nMeiying Zhu",
+      "_likely_category": [
+        "new_inquiry",
+        "scheduling_request"
+      ],
+      "_note": "Ambiguous new_inquiry/scheduling_request — a September wedding date is mentioned but the actual ask is whether menu planning can start before a booking is locked in. Long lead time tests date extraction on non-immediate dates."
+    },
+    {
+      "external_ref": "msg-027",
+      "received_at": "2026-03-02T20:05:00",
+      "raw_content": "We've been with our current provider for three years but our bill has crept up from $210/month to almost $410/month with no real explanation each time we ask, so we're finally shopping around. Before I go further, can you just tell me roughly where your pricing lands for a business our size (12 employees)? Don't need an exact quote yet, just a ballpark so I'm not wasting anyone's time.\n\nColton Speer",
+      "_likely_category": [
+        "new_inquiry",
+        "billing_question"
+      ],
+      "_note": "Ambiguous new_inquiry/billing_question — dollar figures belong to a competitor's bill, not this company's, testing whether extraction correctly attributes amounts to context rather than assuming any dollar figure is an invoice dispute against us."
+    },
+    {
+      "external_ref": "msg-028",
+      "received_at": "2026-03-01T12:30:00",
+      "raw_content": "This is Ingrid — the replacement filter you sent last month doesn't fit the unit at all, it's a different size entirely. Can you send the correct part or should I return this one first?",
+      "_likely_category": "support_issue",
+      "_note": "Name inline, no company, no signature — a concrete, unambiguous product mismatch."
+    },
+    {
+      "external_ref": "msg-029",
+      "received_at": "2026-03-14T07:02:00",
+      "raw_content": "Subject: PAYMENT WENT THROUGH BUT ACCESS STILL LOCKED\n\npaid the reactivation fee yesterday afternoon and got a confirmation email but the account is still showing as suspended when i try to log in. tried on two different browsers so its not that. need this sorted today, i have clients waiting on files in there",
+      "_likely_category": "support_issue",
+      "_note": "All-caps subject, no name, no signature, lowercase body with missing apostrophes — high urgency stated through consequence (clients waiting) rather than adjectives."
+    },
+    {
+      "external_ref": "msg-030",
+      "received_at": "2026-03-03T18:45:00",
+      "raw_content": "Hey, this is Deshawn over at Delgado Auto Body — the diagnostic software froze mid-scan again, third time this week. Losing time on every job when this happens. Anyone available to remote in today?",
+      "_likely_category": "support_issue",
+      "_note": "Name and company given inline, no formal signature — repeat-occurrence phrasing without an explicit date."
+    },
+    {
+      "external_ref": "msg-031",
+      "received_at": "2026-03-06T23:58:00",
+      "raw_content": "login page just shows a blank white screen now, nothing loads, tried refreshing a dozen times",
+      "_likely_category": "support_issue",
+      "_note": "One-line lowercase fragment, no greeting or signature, no name anywhere — near-total absence of identifying info."
+    },
+    {
+      "external_ref": "msg-032",
+      "received_at": "2026-03-09T10:20:00",
+      "raw_content": "Hollis here. The scale in the back room has been reading about half a pound light on everything we weigh, we caught it because a regular customer noticed her usual order seemed smaller. We need someone to recalibrate it, and honestly I'm a little worried about how long it's been off before we noticed.\n\nHollis Danby",
+      "_likely_category": "support_issue",
+      "_note": "Full name given twice (once inline, once as signature), unusual name, no company — a concrete equipment-accuracy problem with real stakes implied (undercharging or overcharging customers)."
+    },
+    {
+      "external_ref": "msg-033",
+      "received_at": "2026-03-11T14:35:00",
+      "raw_content": "can someone pick this up, looks like it fell through the cracks\n\n> From: front desk\n> Sent: last week\n> the printer integration hasnt worked since the update, ive restarted it four times, nothing",
+      "_likely_category": "support_issue",
+      "_note": "Forwarded chain, no name anywhere (sender and quoted 'front desk' are both anonymous), missing apostrophes in the quoted text."
+    },
+    {
+      "external_ref": "msg-034",
+      "received_at": "2026-03-04T16:10:00",
+      "raw_content": "Good afternoon,\n\nI'm writing on behalf of Fernbrook Montessori regarding the classroom tablets deployed last semester. Since the most recent software update, six of our twelve devices have been unable to sync attendance records to the parent portal, which has created real confusion for families checking pickup times. Our IT volunteer (we're a small school, we don't have dedicated staff) has already tried the standard troubleshooting steps listed in your documentation without success.\n\nGiven that this affects half our fleet and touches something as sensitive as child pickup information, I'd appreciate this being treated with some urgency. Please let me know what additional information you need from us.\n\nSincerely,\nYusuf Demirci\nFernbrook Montessori",
+      "_likely_category": "support_issue",
+      "_note": "Long, formal, full signature block — urgency argued through stakes (child safety context) rather than stated outright as 'urgent'."
+    },
+    {
+      "external_ref": "msg-035",
+      "received_at": "2026-03-13T08:15:00",
+      "raw_content": "Corazon here, the automatic backups stopped running sometime last week and I only noticed because I went to restore a file and there was nothing recent. Can someone check what happened on your end?",
+      "_likely_category": "support_issue",
+      "_note": "Name given inline, no company, no signature — vague relative date ('sometime last week') rather than a concrete one."
+    },
+    {
+      "external_ref": "msg-036",
+      "received_at": "2026-03-05T21:40:00",
+      "raw_content": "the app keeps crashin every time i try to upload more then one photo at once, works fine with just one. happens on wifi and data both so its not a connection thing. really annoying when im trying to document a job site fast",
+      "_likely_category": "support_issue",
+      "_note": "No name, no signature, run-on lowercase sentences with typos ('crashin', 'then' for 'than') — a specific reproduction pattern without any identifying info."
+    },
+    {
+      "external_ref": "msg-037",
+      "received_at": "2026-03-08T09:25:00",
+      "raw_content": "forwarding since this is the second time she's emailed with no response\n\n> On Mar 6, Winnifred wrote:\n> the replacement hinge you shipped is for the wrong model, I checked the part number twice against my invoice",
+      "_likely_category": "support_issue",
+      "_note": "Forwarded chain, escalation framing ('second time... no response'), the actual requester's name only appears inside the quote."
+    },
+    {
+      "external_ref": "msg-038",
+      "received_at": "2026-03-02T11:55:00",
+      "raw_content": "This is Toby. Just got off a call with someone on your team who walked me through a reset that didn't fix anything — the error code is still popping up exactly like before (E-204 if that helps). I don't want to keep repeating the same steps with different people, is there someone who can actually look at the account history so I'm not starting from zero again?\n\nToby",
+      "_likely_category": "support_issue",
+      "_note": "Name given twice, no company, informal signature — frustration expressed as a process complaint (repeating steps) rather than about the bug itself."
+    },
+    {
+      "external_ref": "msg-039",
+      "received_at": "2026-03-07T13:00:00",
+      "raw_content": "Third email, still no callback. The overcharge from January still hasn't been fixed and now February looks wrong too. At this point I've spent more time chasing this than the money is even worth, which is honestly the more annoying part. I just want someone to actually own this instead of passing me to a different person every time.\n\nMarco Estrada Jr.",
+      "_likely_category": [
+        "support_issue",
+        "billing_question"
+      ],
+      "_note": "Ambiguous support_issue/billing_question — the underlying issue is billing errors, but the emotional content ('spent more time chasing this') is about support responsiveness, not the dollar amount. Tests whether frustration signal overrides the literal topic."
+    },
+    {
+      "external_ref": "msg-040",
+      "received_at": "2026-03-10T19:20:00",
+      "raw_content": "nobody ever confirmed whether the refund from the cancelled service call actually happened. checked my bank, nothing there yet. this is the kind of thing that makes me not want to renew honestly",
+      "_likely_category": [
+        "support_issue",
+        "billing_question"
+      ],
+      "_note": "Ambiguous support_issue/billing_question — a refund status question that ends on a renewal/retention threat. No name, all lowercase, no punctuation at sentence starts."
+    },
+    {
+      "external_ref": "msg-041",
+      "received_at": "2026-03-04T06:30:00",
+      "raw_content": "Subject: SOMETHING IS WRONG WITH MY ACCOUNT\n\ni dont even know if this is a billing thing or a tech thing but numbers on my dashboard dont match what i was charged and i cant tell if its a display bug or if i actually got overcharged. can someone just look at it because i cant tell what im even supposed to be reporting",
+      "_likely_category": [
+        "support_issue",
+        "billing_question"
+      ],
+      "_note": "Ambiguous support_issue/billing_question, self-aware about its own category confusion — the sender names the ambiguity directly, testing whether the classifier can sit with genuine uncertainty rather than forcing confidence."
+    },
+    {
+      "external_ref": "msg-042",
+      "received_at": "2026-03-12T15:45:00",
+      "raw_content": "The scheduling widget on our site (the one you built for us) doesn't support recurring appointments, only one-offs. We've been manually re-adding the same weekly clients every single week for months now and it's eating hours. Is this something that can be added to what we already have, or would recurring bookings be a completely separate build?\n\nAnezka Novak\nAshgrove Veterinary Clinic",
+      "_likely_category": [
+        "support_issue",
+        "new_inquiry"
+      ],
+      "_note": "Ambiguous support_issue/new_inquiry — phrased as a missing-feature complaint about existing work, but the actual ask ('completely separate build?') is a new project inquiry. Tests whether feature requests get default-routed as support tickets."
+    },
+    {
+      "external_ref": "msg-043",
+      "received_at": "2026-03-01T17:10:00",
+      "raw_content": "we've outgrown the free tier limits and keep hitting the wall on exports, is that a setting somewhere or do we need to talk to someone about upgrading",
+      "_likely_category": [
+        "support_issue",
+        "new_inquiry"
+      ],
+      "_note": "Ambiguous support_issue/new_inquiry — a capacity limit reads like a bug ('hitting the wall') but resolves to a paid upgrade conversation. No name, casual register."
+    },
+    {
+      "external_ref": "msg-044",
+      "received_at": "2026-03-06T20:15:00",
+      "raw_content": "the tech who was supposed to come Tuesday never showed, no call no text, and now im not sure if I even have an appointment anymore or if it got dropped somewhere. can someone check what happened and let me know when this is actually getting rescheduled",
+      "_likely_category": [
+        "support_issue",
+        "scheduling_request"
+      ],
+      "_note": "Ambiguous support_issue/scheduling_request — a missed appointment is simultaneously a service failure and a reschedule request. Missing apostrophes throughout."
+    },
+    {
+      "external_ref": "msg-045",
+      "received_at": "2026-03-02T09:05:00",
+      "raw_content": "Winnifred again — got billed $89 for a tier I thought I downgraded from two months ago. Can you check if the downgrade actually went through on your end?",
+      "_likely_category": "billing_question",
+      "_note": "Repeat sender ('again'), name inline, no signature — a specific small dollar amount."
+    },
+    {
+      "external_ref": "msg-046",
+      "received_at": "2026-03-09T12:40:00",
+      "raw_content": "passing this along, finance flagged it\n\n> the invoice numbers dont match between what was emailed and whats showing in the portal, $1,240 vs $1,180, not sure which is correct",
+      "_likely_category": "billing_question",
+      "_note": "Forwarded chain, no name, two conflicting dollar amounts in the same message — tests extraction when there isn't a single unambiguous figure."
+    },
+    {
+      "external_ref": "msg-047",
+      "received_at": "2026-03-13T22:00:00",
+      "raw_content": "Marisol here, just noticed we've been charged the old rate of $75 instead of the new $95 rate for two billing cycles now — wanted to flag it before it becomes a bigger reconciliation headache on either side.",
+      "_likely_category": "billing_question",
+      "_note": "Name inline, no signature — two dollar figures in a rate-mismatch context rather than a single disputed charge."
+    },
+    {
+      "external_ref": "msg-048",
+      "received_at": "2026-03-05T08:30:00",
+      "raw_content": "Hello,\n\nOur accounts payable team is holding payment on invoice #5521 pending clarification — the PO number referenced doesn't match anything in our system, and the amount ($4,215.60) is about 15% above the quote we signed off on. Could someone from billing reach out directly to our AP contact rather than me, since I don't have visibility into the underlying numbers?\n\nBirdie Nakamura\nNorthgate Self Storage",
+      "_likely_category": "billing_question",
+      "_note": "Formal, full signature block, precise non-round dollar figure, unusual company name — a control case for a corporate AP-style billing dispute."
+    },
+    {
+      "external_ref": "msg-049",
+      "received_at": "2026-03-08T17:25:00",
+      "raw_content": "why does the invoice say net 15 when our contract says net 30, is that a typo or did terms change without us being told",
+      "_likely_category": "billing_question",
+      "_note": "No name, no signature, no dollar amount at all — a pure terms/contract question rather than a disputed charge."
+    },
+    {
+      "external_ref": "msg-050",
+      "received_at": "2026-03-11T10:50:00",
+      "raw_content": "hi,\n\nso this is a weird one — we got charged for TWO annual renewals this cycle, $960 each, back to back, three days apart. i checked with my card company and both charges are real, not a duplicate showing twice in my banking app or anything like that. i genuinely dont know how that happens with an annual plan unless something on your end double-fired.\n\ncan someone look at account history for us and figure out which one shouldnt have gone through? happy to send screenshots of both transactions if that helps speed things up.\n\nthanks\nQuinn Alderete",
+      "_likely_category": "billing_question",
+      "_note": "Long, informal, missing apostrophes throughout, real signature at the end despite the casual tone — two identical dollar amounts rather than one."
+    },
+    {
+      "external_ref": "msg-051",
+      "received_at": "2026-03-01T19:15:00",
+      "raw_content": "Subject: DOUBLE CHARGE\n\ncharged twice this morning for the same $210 payment, need one of them reversed",
+      "_likely_category": "billing_question",
+      "_note": "All-caps subject, no name, terse body — a same-day duplicate charge."
+    },
+    {
+      "external_ref": "msg-052",
+      "received_at": "2026-03-14T14:05:00",
+      "raw_content": "Good afternoon,\n\nI manage billing for Silver Fern Landscaping and I'm trying to reconcile our year-end books. Could you send an itemized statement for all charges between January and March? Our internal records show $6,740 total paid but I want to confirm that matches what's on file with you before I close out the quarter.\n\nChidi Uzoma",
+      "_likely_category": "billing_question",
+      "_note": "Formal, has name and company, unusual name — a reconciliation request rather than a dispute, tests that not every billing_question implies something is wrong."
+    },
+    {
+      "external_ref": "msg-053",
+      "received_at": "2026-03-03T07:40:00",
+      "raw_content": "the autopay took out $150 more than our usual amount this month and nobody told us why in advance, would like an explanation before it happens again",
+      "_likely_category": "billing_question",
+      "_note": "No name, no signature — an unexplained amount increase rather than a flat dispute."
+    },
+    {
+      "external_ref": "msg-054",
+      "received_at": "2026-03-06T11:20:00",
+      "raw_content": "I know I've emailed about this exact $430 charge before and was told it was \"being looked into,\" that was almost a month ago now. At this point I don't even care about the explanation as much as I care about whether this is going to keep happening every cycle, because if it is, that changes whether we stick around past our contract renewal.\n\nMarcus Webb",
+      "_likely_category": [
+        "billing_question",
+        "support_issue"
+      ],
+      "_note": "Ambiguous billing_question/support_issue — repeat contact about the same charge, primary topic is billing but the closing line is a renewal threat, which is really a support/retention signal."
+    },
+    {
+      "external_ref": "msg-055",
+      "received_at": "2026-03-09T16:30:00",
+      "raw_content": "still being charged the setup fee every month, thought that was one time only, this is the fourth month in a row now and support keeps saying theyll escalate it and then nothing happens",
+      "_likely_category": [
+        "billing_question",
+        "support_issue"
+      ],
+      "_note": "Ambiguous billing_question/support_issue — a recurring billing error compounded by a support process that keeps failing to resolve it. No name, run-on sentence structure."
+    },
+    {
+      "external_ref": "msg-056",
+      "received_at": "2026-03-12T08:10:00",
+      "raw_content": "Subject: BILLING OR NOT SURE WHAT\n\nwe were quoted $1,500 for the initial project but the final invoice came in at $2,100 and when I asked why, the answer I got didnt really explain the gap, it just said \"additional scope.\" nobody discussed additional scope with me before doing it, so now im not sure if this is a billing dispute or a bigger problem with how work gets approved on jobs like this",
+      "_likely_category": [
+        "billing_question",
+        "support_issue"
+      ],
+      "_note": "Ambiguous billing_question/support_issue, self-aware about its own category confusion in the subject line itself — the dollar gap is billing on its surface but the real complaint is unauthorized scope creep, a process issue."
+    },
+    {
+      "external_ref": "msg-057",
+      "received_at": "2026-03-04T13:55:00",
+      "raw_content": "Trying to figure out if our renewal date moved when we upgraded plans in January — the $340/month rate started immediately but I can't tell if that also reset our annual renewal date to January or if it's still the original November date. Whoever handles contracts, can you confirm which?\n\nSal Petrucci",
+      "_likely_category": [
+        "billing_question",
+        "scheduling_request"
+      ],
+      "_note": "Ambiguous billing_question/scheduling_request — a rate question that's really about when a renewal date falls, blending a dollar amount with date logic in one ask."
+    },
+    {
+      "external_ref": "msg-058",
+      "received_at": "2026-03-01T15:40:00",
+      "raw_content": "This is Bex — need to move our March 20th consult to any day the week after, mornings only if possible.",
+      "_likely_category": "scheduling_request",
+      "_note": "Name inline, no signature — a concrete date with a time-of-day constraint."
+    },
+    {
+      "external_ref": "msg-059",
+      "received_at": "2026-03-07T09:30:00",
+      "raw_content": "looking to book something for the last week of March, flexible on exact day, just need it done before April since we're closed for inventory the first week",
+      "_likely_category": "scheduling_request",
+      "_note": "No name, no signature — a date range rather than a specific date, with a reason attached."
+    },
+    {
+      "external_ref": "msg-060",
+      "received_at": "2026-03-13T14:20:00",
+      "raw_content": "Hi, Corazon Reyes with Nguyen Family Dry Cleaning — can we confirm our March 18th pickup is still on for 7am? Just want to make sure someone's actually planning to be here that early before we open the doors for it.",
+      "_likely_category": "scheduling_request",
+      "_note": "Name and unusual company given inline, no formal signature — a confirmation rather than a new request or reschedule."
+    },
+    {
+      "external_ref": "msg-061",
+      "received_at": "2026-03-10T22:30:00",
+      "raw_content": "need to cancel thursdays slot, wont be able to make a new one this week either, will reach out when i know my schedule again",
+      "_likely_category": "scheduling_request",
+      "_note": "One-line lowercase, no greeting or signature, missing apostrophes ('thursdays', 'wont') — a cancellation with no concrete rebooking date."
+    },
+    {
+      "external_ref": "msg-062",
+      "received_at": "2026-03-05T18:00:00",
+      "raw_content": "Hollow Creek Apiary here (it's me, Rúben, same as always) — can we lock in the spring inspection for the week of March 23rd? Bees don't care about our calendars but I'd rather not be scrambling last minute like last year.\n\nRúben",
+      "_likely_category": "scheduling_request",
+      "_note": "Unusual company and name, repeat-sender framing ('same as always'), real signature — a specific week rather than a single date."
+    },
+    {
+      "external_ref": "msg-063",
+      "received_at": "2026-03-08T11:15:00",
+      "raw_content": "can you respond to this, came in on the general inbox\n\n> is there any way to get an earlier slot than April 2nd, thats the earliest the online system showed but were hoping for sometime in March if a cancellation opens up",
+      "_likely_category": "scheduling_request",
+      "_note": "Forwarded chain, no name anywhere including in the quoted text — missing apostrophes ('thats', 'were') in the original message."
+    },
+    {
+      "external_ref": "msg-064",
+      "received_at": "2026-03-02T10:10:00",
+      "raw_content": "Before I book anything, does your March 25th opening still stand? I saw it on the site last week but wanted to confirm since this would be a first-time visit for us and I don't want to show up to a scheduling conflict.\n\nOtto Brandt",
+      "_likely_category": [
+        "scheduling_request",
+        "new_inquiry"
+      ],
+      "_note": "Ambiguous scheduling_request/new_inquiry — confirming a slot, but 'first-time visit' signals this is really a new customer inquiry wrapped in date-confirmation language."
+    },
+    {
+      "external_ref": "msg-065",
+      "received_at": "2026-03-11T20:45:00",
+      "raw_content": "is march 30th still open for new bookings or is that only for existing clients right now, dont want to waste anyones time asking if its not even an option",
+      "_likely_category": [
+        "scheduling_request",
+        "new_inquiry"
+      ],
+      "_note": "Ambiguous scheduling_request/new_inquiry — a date-first question that's actually gating whether they're even eligible to become a new client. Lowercase, missing apostrophes."
+    },
+    {
+      "external_ref": "msg-066",
+      "received_at": "2026-03-06T09:15:00",
+      "raw_content": "Our contract renews March 31st automatically unless we cancel 30 days out, which is basically now. Before I let that deadline pass, can we get on the calendar for a quick review call sometime this week? Would rather talk it through than let an auto-renewal decide for us.\n\nKip Dawes",
+      "_likely_category": [
+        "scheduling_request",
+        "billing_question"
+      ],
+      "_note": "Ambiguous scheduling_request/billing_question — a contract renewal deadline drives a request to book a call, blending a billing/contract date with a scheduling ask."
+    },
+    {
+      "external_ref": "msg-067",
+      "received_at": "2026-03-14T16:50:00",
+      "raw_content": "the appointment reminder text said tomorrow but the email confirmation said the day after, which one is actually right because i took the wrong day off work last time this happened",
+      "_likely_category": [
+        "scheduling_request",
+        "support_issue"
+      ],
+      "_note": "Ambiguous scheduling_request/support_issue — conflicting reminders point to a system bug (support) but the immediate ask is just confirming the correct date (scheduling). No name, no punctuation discipline."
+    },
+    {
+      "external_ref": "msg-068",
+      "received_at": "2026-03-03T04:11:00",
+      "raw_content": "FINAL NOTICE: Your domain ranking has dropped significantly. Our SEO specialists can restore your visibility within 48 hours. Limited spots this week — reply now to claim yours.",
+      "_likely_category": "spam",
+      "_note": "Classic urgency-manufacturing spam, no name, no signature."
+    },
+    {
+      "external_ref": "msg-069",
+      "received_at": "2026-03-09T02:50:00",
+      "raw_content": "Hi, I came across your business and wanted to personally reach out about a guaranteed way to triple your leads this month. No contracts, no risk, just results. Let me know if you'd like a free strategy session!",
+      "_likely_category": "spam",
+      "_note": "Falsely personalized cold-pitch spam with no name, no signature, no real specifics despite the friendly tone."
+    },
+    {
+      "external_ref": "msg-070",
+      "received_at": "2026-03-12T05:33:00",
+      "raw_content": "Security Alert: unusual activity detected on your business account. Verify your identity within 24 hours or access will be permanently restricted. Click below to confirm.",
+      "_likely_category": "spam",
+      "_note": "Phishing-style spam mimicking an internal security notice, no name, no signature."
+    },
+    {
+      "external_ref": "msg-071",
+      "received_at": "2026-03-07T01:05:00",
+      "raw_content": "Hello,\n\nI hope this finds you well! I represent a growing network of investors looking to fund small local businesses just like yours with NO equity given up and NO repayment required for the first 12 months. We've already helped over 400 businesses this quarter alone. Would you be open to a 10-minute call to see if you qualify? Spots are filling up fast for this program.\n\nBest regards,\nBusiness Growth Team",
+      "_likely_category": "spam",
+      "_note": "Longer-form investment-scam spam with a generic team sign-off rather than an individual name — tests that a signature block alone doesn't imply an identifiable sender."
+    },
+    {
+      "external_ref": "msg-072",
+      "received_at": "2026-03-13T03:20:00",
+      "raw_content": "Hi there,\n\nI've been following your business online and think there could be a great partnership opportunity between us. We specialize in helping companies like yours scale through strategic marketing partnerships, and I'd love to set up a quick call to explore synergies. We only reach out to a select few businesses each month that we think are a strong fit.\n\nLooking forward to connecting!\nPartnerships Team",
+      "_likely_category": [
+        "spam",
+        "new_inquiry"
+      ],
+      "_note": "Ambiguous spam/new_inquiry — a mass-solicitation partnership pitch dressed in the same polite, personalized-sounding language as a genuine business inquiry. Tests whether the classifier can see through generic-but-plausible phrasing rather than relying on obvious spam markers like ALL CAPS or urgency."
+    }
+  ]
+}
