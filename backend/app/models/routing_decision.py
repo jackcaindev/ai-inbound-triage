@@ -22,6 +22,7 @@ class RoutingDecision(CreatedAtMixin, Base):
     )
     destination: Mapped[str] = mapped_column(String(128), nullable=False)
     decided_by: Mapped[str] = mapped_column(String(16), nullable=False)
+    reason: Mapped[str] = mapped_column(String(64), nullable=False)
     reviewer_note: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     record: Mapped["Record"] = relationship("Record", back_populates="routing_decisions")

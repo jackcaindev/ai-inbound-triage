@@ -34,14 +34,15 @@ async def test_extract_returns_none_for_fields_absent_from_source(
 async def test_missing_category_required_field_is_flagged(
     db: AsyncSession, make_record, fake_llm: FakeLLMController
 ) -> None:
-    """billing_question requires a dollar amount to be extractable — if the model
-    (correctly) can't find one, that must be surfaced as a missing required field so
-    the caller can force needs_review, not silently treated as a normal empty field."""
+    """billing_question requires requested_action — routing can't proceed without
+    knowing what's actually being asked for. A missing dollar amount or company is
+    not required: the sender simply not mentioning money isn't an uncertain
+    extraction, so it must not force review on its own."""
     record: Record = await make_record(raw_content="Why was I charged again this month?")
     fake_llm.set_extraction(
         contact_name="Sam",
         company=None,
-        requested_action="dispute a charge",
+        requested_action=None,
         urgency="medium",
         dates_mentioned=[],
         dollar_amounts_mentioned=[],
@@ -49,7 +50,7 @@ async def test_missing_category_required_field_is_flagged(
 
     outcome = await extract_record(record, "billing_question", db)
 
-    assert outcome.missing_required_fields == ["dollar_amounts_mentioned"]
+    assert outcome.missing_required_fields == ["requested_action"]
 
 
 async def test_no_required_fields_for_a_category_with_none_configured(

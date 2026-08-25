@@ -8,14 +8,44 @@ from app.models import Record, RoutingDecision
 from app.models.enums import DecidedBy, RecordStatus
 from app.pipeline.audit import write_audit_log
 from app.pipeline.classify import classify_record
-from app.pipeline.confidence import compute_confidence
+from app.pipeline.confidence import classification_below_threshold
 from app.pipeline.extract import extract_record
 from app.pipeline.rules import evaluate_rules
+
+NEEDS_REVIEW_DESTINATION = "needs_review"
 
 
 def load_categories() -> list[dict[str, Any]]:
     with open(settings.categories_path, encoding="utf-8") as f:
         return yaml.safe_load(f)["categories"]
+
+
+async def _route_to_review(
+    db: AsyncSession,
+    record: Record,
+    *,
+    reason: str,
+    rule_id: int | None,
+    destination: str,
+    audit_action: str,
+    audit_after: dict[str, Any],
+) -> None:
+    """Every record that lands in needs_review still gets a routing_decisions row —
+    reviewers and the eval harness need to see *why* it stopped, not just that it did."""
+    db.add(
+        RoutingDecision(
+            record_id=record.id,
+            rule_id=rule_id,
+            destination=destination,
+            decided_by=DecidedBy.SYSTEM.value,
+            reason=reason,
+        )
+    )
+    record.status = RecordStatus.NEEDS_REVIEW.value
+    await write_audit_log(
+        db, record_id=record.id, actor="system", action=audit_action, after=audit_after
+    )
+    await db.flush()
 
 
 async def process_record(record_id: int, db: AsyncSession) -> Record:
@@ -38,46 +68,49 @@ async def process_record(record_id: int, db: AsyncSession) -> Record:
         extraction = extract_outcome.extraction
 
         if extract_outcome.missing_required_fields:
-            record.status = RecordStatus.NEEDS_REVIEW.value
-            await write_audit_log(
+            field = extract_outcome.missing_required_fields[0]
+            await _route_to_review(
                 db,
-                record_id=record.id,
-                actor="system",
-                action="forced_review_missing_fields",
-                after={"missing_fields": extract_outcome.missing_required_fields},
+                record,
+                reason=f"missing_required_field:{field}",
+                rule_id=None,
+                destination=NEEDS_REVIEW_DESTINATION,
+                audit_action="forced_review_missing_fields",
+                audit_after={"missing_fields": extract_outcome.missing_required_fields},
             )
-            await db.flush()
             return record
 
-        confidence = compute_confidence(classification, extraction)
-
-        if confidence < settings.confidence_threshold:
-            record.status = RecordStatus.NEEDS_REVIEW.value
-            await write_audit_log(
+        if classification_below_threshold(classification, settings.confidence_threshold):
+            await _route_to_review(
                 db,
-                record_id=record.id,
-                actor="system",
-                action="needs_review_low_confidence",
-                after={"confidence": confidence, "threshold": settings.confidence_threshold},
+                record,
+                reason="low_classification_confidence",
+                rule_id=None,
+                destination=NEEDS_REVIEW_DESTINATION,
+                audit_action="needs_review_low_confidence",
+                audit_after={
+                    "confidence": classification.confidence,
+                    "threshold": settings.confidence_threshold,
+                },
             )
-            await db.flush()
             return record
 
         outcome = await evaluate_rules(classification.category, extraction.fields, db)
 
         if outcome.requires_review:
-            record.status = RecordStatus.NEEDS_REVIEW.value
-            await write_audit_log(
+            assert outcome.matched_rule is not None  # requires_review only true on a match
+            await _route_to_review(
                 db,
-                record_id=record.id,
-                actor="system",
-                action="forced_review_by_rule",
-                after={
-                    "rule_id": outcome.matched_rule.id if outcome.matched_rule else None,
-                    "rule_name": outcome.matched_rule.name if outcome.matched_rule else None,
+                record,
+                reason="rule",
+                rule_id=outcome.matched_rule.id,
+                destination=outcome.destination,
+                audit_action="forced_review_by_rule",
+                audit_after={
+                    "rule_id": outcome.matched_rule.id,
+                    "rule_name": outcome.matched_rule.name,
                 },
             )
-            await db.flush()
             return record
 
         db.add(
@@ -86,6 +119,7 @@ async def process_record(record_id: int, db: AsyncSession) -> Record:
                 rule_id=outcome.matched_rule.id if outcome.matched_rule else None,
                 destination=outcome.destination,
                 decided_by=DecidedBy.SYSTEM.value,
+                reason="rule" if outcome.matched_rule else "auto",
             )
         )
         record.status = RecordStatus.AUTO_ROUTED.value

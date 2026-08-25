@@ -77,3 +77,13 @@ cd frontend && npm run build             # must build without type errors
 - One phase at a time. Do not build ahead into later phases.
 - When the spec and a convenient shortcut conflict, follow the spec and say so.
 - Prefer boring, readable code. This repo gets read by prospective clients.
+
+## Git
+
+Work directly on main. Do not create feature branches.
+Commit at the end of each phase with a descriptive message.
+
+## Operational tooling
+
+Every phase ships with the CLI commands needed to run, inspect, and debug
+what it added. A feature is not done until there's a way to see it fail.

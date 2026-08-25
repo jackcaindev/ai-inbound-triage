@@ -1,44 +1,39 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Classification, Extraction, Record
+from app.models import Classification, Record
 from app.models.enums import RecordStatus
-from app.pipeline.confidence import compute_confidence
+from app.pipeline.confidence import classification_below_threshold
 from app.pipeline.process import process_record
 from tests.conftest import FakeLLMController
 
 
-def test_floor_rule_caps_confidence_when_extraction_mostly_empty() -> None:
+def test_classification_below_threshold_is_true_below_cutoff() -> None:
     classification = Classification(
         record_id=1,
         category="new_inquiry",
-        confidence=0.95,
+        confidence=0.5,
         model="test",
         prompt_version="v1",
         raw_response={},
         latency_ms=1,
     )
-    extraction = Extraction(
-        record_id=1, schema_version="v1", fields={}, confidence=0.16, model="test", raw_response={}
-    )
 
-    assert compute_confidence(classification, extraction) == 0.5
+    assert classification_below_threshold(classification, threshold=0.85) is True
 
 
-def test_confidence_unaffected_when_extraction_mostly_populated() -> None:
+def test_classification_below_threshold_ignores_extraction_confidence() -> None:
+    """Extraction completeness never factors into this gate, however sparse it is."""
     classification = Classification(
         record_id=1,
         category="new_inquiry",
-        confidence=0.95,
+        confidence=0.97,
         model="test",
         prompt_version="v1",
         raw_response={},
         latency_ms=1,
     )
-    extraction = Extraction(
-        record_id=1, schema_version="v1", fields={}, confidence=0.83, model="test", raw_response={}
-    )
 
-    assert compute_confidence(classification, extraction) == 0.95
+    assert classification_below_threshold(classification, threshold=0.85) is False
 
 
 async def test_low_confidence_record_lands_in_needs_review(

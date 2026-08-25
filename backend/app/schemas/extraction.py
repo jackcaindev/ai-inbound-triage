@@ -23,9 +23,19 @@ class BaseExtractionFields(BaseModel):
 # schema itself keeps every field Optional (a field can legitimately be absent from
 # the source). Enforced in app code post-extraction, not via Pydantic `...`-required,
 # since "required but nullable" isn't expressible as a plain required Pydantic field.
+#
+# Kept deliberately minimal: an absent field is not an uncertain one. A sender who
+# never mentions a dollar amount or a date isn't a low-confidence extraction — the
+# category just isn't about money or dates for that message. requested_action is the
+# one field routing genuinely cannot proceed without, since it's what tells a human
+# (or a rule) what the business is actually being asked to do. spam has no required
+# fields at all: "no genuine business request" is exactly what that category means, so
+# there's nothing to require.
 REQUIRED_FIELDS_BY_CATEGORY: dict[str, list[str]] = {
-    "billing_question": ["dollar_amounts_mentioned"],
-    "scheduling_request": ["dates_mentioned"],
+    "new_inquiry": ["requested_action"],
+    "support_issue": ["requested_action"],
+    "billing_question": ["requested_action"],
+    "scheduling_request": ["requested_action"],
 }
 
 

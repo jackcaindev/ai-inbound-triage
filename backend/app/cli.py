@@ -12,17 +12,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.db import async_session_factory, engine
-from app.models import AuditLog, Classification, Extraction, Record, RoutingDecision, Source
+from app.models import AuditLog, Classification, Extraction, Record, RoutingDecision, Rule, Source
 from app.models.enums import RecordStatus
 from app.pipeline.audit import write_audit_log
 from app.pipeline.batch import BatchSummary, RecordOutcome, compute_stats, run_batch
 from app.pipeline.ingest import ingest_json_samples
+from app.pipeline.rules import load_seed_rules
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_SAMPLES_PATH = BACKEND_DIR.parent / "seeds" / "inbound_samples.json"
+DEFAULT_RULES_PATH = BACKEND_DIR.parent / "seeds" / "rules.json"
 
 
-async def run_seed(samples_path: Path) -> None:
+async def run_seed(samples_path: Path, rules_path: Path) -> None:
     async with async_session_factory() as db:
         result = await db.execute(select(Source).where(Source.type == "csv"))
         source = result.scalars().first()
@@ -32,9 +34,30 @@ async def run_seed(samples_path: Path) -> None:
             await db.flush()
 
         outcome = await ingest_json_samples(source, samples_path, db)
+        rules_outcome = await load_seed_rules(rules_path, db)
         await db.commit()
 
     print(f"Seeded {outcome.created} new records, skipped {outcome.skipped} already present")
+    print(f"Seeded {rules_outcome.created} new rules, skipped {rules_outcome.skipped} already present")
+
+
+async def run_rules() -> None:
+    async with async_session_factory() as db:
+        rules = (
+            await db.execute(select(Rule).order_by(Rule.priority.asc()))
+        ).scalars().all()
+
+    if not rules:
+        print("No rules configured.")
+        return
+
+    for rule in rules:
+        status = "active" if rule.active else "inactive"
+        print(
+            f"[{rule.id}] priority={rule.priority}  {status}  {rule.name!r}\n"
+            f"    conditions={rule.conditions}\n"
+            f"    destination={rule.destination}  requires_review={rule.requires_review}"
+        )
 
 
 def _print_record_line(outcome: RecordOutcome) -> None:
@@ -193,7 +216,8 @@ async def run_show(record: str) -> None:
     for r in routing_decisions:
         print(
             f"  [{r.id}] destination={r.destination}  decided_by={r.decided_by}  "
-            f"rule_id={r.rule_id}  reviewer_note={r.reviewer_note}  created_at={r.created_at}"
+            f"reason={r.reason}  rule_id={r.rule_id}  reviewer_note={r.reviewer_note}  "
+            f"created_at={r.created_at}"
         )
 
     print()
@@ -336,6 +360,12 @@ def main(argv: list[str] | None = None) -> None:
         default=DEFAULT_SAMPLES_PATH,
         help=f"Path to the seed JSON file (default: {DEFAULT_SAMPLES_PATH})",
     )
+    seed_parser.add_argument(
+        "--rules-file",
+        type=Path,
+        default=DEFAULT_RULES_PATH,
+        help=f"Path to the seed rules JSON file (default: {DEFAULT_RULES_PATH})",
+    )
 
     process_parser = subparsers.add_parser(
         "process", help="Run pending records through the full pipeline (classify, extract, route)"
@@ -364,6 +394,10 @@ def main(argv: list[str] | None = None) -> None:
         "stats", help="Print aggregate pipeline numbers from the current DB state"
     )
 
+    subparsers.add_parser(
+        "rules", help="List rules currently in the database, ordered by priority"
+    )
+
     show_parser = subparsers.add_parser(
         "show",
         help="Show a record's full detail: classification, extraction, routing decision, audit log",
@@ -386,11 +420,13 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     if args.command == "seed":
-        asyncio.run(run_seed(args.file))
+        asyncio.run(run_seed(args.file, args.rules_file))
     elif args.command == "process":
         asyncio.run(run_process(record=args.record, limit=args.limit, verbose=args.verbose))
     elif args.command == "stats":
         asyncio.run(run_stats())
+    elif args.command == "rules":
+        asyncio.run(run_rules())
     elif args.command == "show":
         asyncio.run(run_show(args.record))
     elif args.command == "doctor":

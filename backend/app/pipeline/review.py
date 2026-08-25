@@ -71,6 +71,7 @@ async def submit_review_decision(
             rule_id=None,
             destination=destination or final_category,
             decided_by=DecidedBy.HUMAN.value,
+            reason="human_review",
             reviewer_note=note,
         )
     )

@@ -1,4 +1,6 @@
+import json
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from sqlalchemy import select
@@ -13,6 +15,45 @@ class RuleOutcome:
     matched_rule: Rule | None
     destination: str
     requires_review: bool
+
+
+@dataclass
+class RuleSeedResult:
+    created: int
+    skipped: int
+
+
+async def load_seed_rules(rules_path: str | Path, db: AsyncSession) -> RuleSeedResult:
+    """Loads seeds/rules.json into the rules table. Idempotent on rule name — an
+    existing rule with that name is left untouched rather than overwritten, since
+    rules are mutable config a user may have already edited in place. Re-running
+    seed only ever adds rules that aren't there yet."""
+    entries = json.loads(Path(rules_path).read_text(encoding="utf-8"))
+
+    created = 0
+    skipped = 0
+    for entry in entries:
+        existing = (
+            await db.execute(select(Rule).where(Rule.name == entry["name"]))
+        ).scalars().first()
+        if existing is not None:
+            skipped += 1
+            continue
+
+        db.add(
+            Rule(
+                name=entry["name"],
+                priority=entry["priority"],
+                conditions=entry["conditions"],
+                destination=entry["destination"],
+                requires_review=entry["requires_review"],
+                active=entry["active"],
+            )
+        )
+        created += 1
+
+    await db.flush()
+    return RuleSeedResult(created=created, skipped=skipped)
 
 
 async def evaluate_rules(category: str, fields: dict[str, Any], db: AsyncSession) -> RuleOutcome:

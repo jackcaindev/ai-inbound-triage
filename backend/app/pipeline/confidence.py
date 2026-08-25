@@ -1,16 +1,13 @@
-from app.models import Classification, Extraction
-
-# Below this fraction of populated base fields, the extraction is "mostly empty".
-EXTRACTION_COMPLETENESS_FLOOR = 0.5
-LOW_COMPLETENESS_CONFIDENCE_CAP = 0.5
+from app.models import Classification
 
 
-def compute_confidence(classification: Classification, extraction: Extraction) -> float:
-    """Starts from the model's self-reported classification confidence. If the
-    extraction came back mostly empty, cap confidence so the record is more likely to
-    land in review — a category the model is confident about but couldn't back up with
-    any actual fields is exactly the case a human should look at."""
-    base = classification.confidence
-    if extraction.confidence < EXTRACTION_COMPLETENESS_FLOOR:
-        return min(base, LOW_COMPLETENESS_CONFIDENCE_CAP)
-    return base
+def classification_below_threshold(classification: Classification, threshold: float) -> bool:
+    """Gates on the model's self-reported classification confidence alone.
+
+    Extraction confidence measures field completeness, not correctness of the
+    category call — categories like spam are legitimately sparse, so blending
+    extraction confidence in here previously dragged a confident, correct
+    classification into review (and, worse, skipped rule evaluation on the way).
+    Sparse extractions are handled separately, by the required-fields check.
+    """
+    return classification.confidence < threshold
