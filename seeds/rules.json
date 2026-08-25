@@ -1,0 +1,22 @@
+[
+  {
+    "name": "High dollar amount forces review",
+    "priority": 10,
+    "conditions": [
+      { "field": "dollar_amounts_mentioned", "op": "any_gte", "value": 10000 }
+    ],
+    "destination": "finance_review",
+    "requires_review": true,
+    "active": true
+  },
+  {
+    "name": "Spam goes straight to spam queue",
+    "priority": 20,
+    "conditions": [
+      { "category": "spam" }
+    ],
+    "destination": "spam",
+    "requires_review": false,
+    "active": true
+  }
+]
