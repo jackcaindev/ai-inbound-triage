@@ -55,6 +55,7 @@ async def run_batch(
     record_id: int | None = None,
     limit: int | None = None,
     on_record: Callable[[RecordOutcome], None] | None = None,
+    on_error: Callable[[Record, Exception], None] | None = None,
 ) -> BatchSummary:
     """Runs pending records through the full pipeline (classify, extract, score,
     route). Selects oldest-received first so a run processes the inbox in the order
@@ -62,7 +63,9 @@ async def run_batch(
     back the records already done, and so `on_record` sees committed state as it's
     called. `on_record`, if given, fires immediately after each record finishes —
     that's what lets the CLI print a line per record as the batch runs rather than
-    only at the end.
+    only at the end. `on_error`, if given, fires with the record and the exception
+    process_record raised before the batch moves on — that's what lets the CLI show
+    the full traceback for a failed record instead of just its terminal status.
     """
     query = (
         select(Record)
@@ -89,8 +92,9 @@ async def run_batch(
             # audit_log entry with the error before re-raising — the catch here
             # only keeps one bad record from stopping the rest of the batch.
             await process_record(record.id, db)
-        except Exception:
-            pass
+        except Exception as exc:
+            if on_error is not None:
+                on_error(record, exc)
         await db.commit()
 
         classification = (

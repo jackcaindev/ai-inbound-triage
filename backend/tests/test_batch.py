@@ -173,6 +173,48 @@ async def test_run_batch_continues_past_a_failed_record(
     assert statuses["clear"] == RecordStatus.AUTO_ROUTED.value
 
 
+async def test_run_batch_on_error_receives_the_record_and_exception(
+    db: AsyncSession, make_record, fake_llm: FakeLLMController
+) -> None:
+    def responder(kwargs: dict[str, Any]) -> Any:
+        if "boom" in kwargs["user_message"]:
+            raise RuntimeError("simulated LLM failure")
+        return _responder(kwargs)
+
+    fake_llm.set_responder(responder)
+    broken = await make_record(external_ref="broken", raw_content="boom, this will explode")
+    await make_record(external_ref="clear", raw_content="service my area please")
+
+    errors: list[tuple[int, Exception]] = []
+    summary = await run_batch(
+        db, on_error=lambda record, exc: errors.append((record.id, exc))
+    )
+
+    assert summary.failed == 1
+    assert len(errors) == 1
+    assert errors[0][0] == broken.id
+    assert isinstance(errors[0][1], RuntimeError)
+    assert str(errors[0][1]) == "simulated LLM failure"
+
+
+async def test_run_batch_without_on_error_still_continues_past_failures(
+    db: AsyncSession, make_record, fake_llm: FakeLLMController
+) -> None:
+    def responder(kwargs: dict[str, Any]) -> Any:
+        if "boom" in kwargs["user_message"]:
+            raise RuntimeError("simulated LLM failure")
+        return _responder(kwargs)
+
+    fake_llm.set_responder(responder)
+    await make_record(external_ref="broken", raw_content="boom, this will explode")
+    await make_record(external_ref="clear", raw_content="service my area please")
+
+    summary = await run_batch(db)
+
+    assert summary.failed == 1
+    assert summary.auto_routed == 1
+
+
 async def test_compute_stats_matches_a_batch_run(
     db: AsyncSession, make_record, fake_llm: FakeLLMController
 ) -> None:
